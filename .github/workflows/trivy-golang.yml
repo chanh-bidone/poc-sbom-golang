@@ -73,14 +73,19 @@ jobs:
           scan-ref: "${{ env.PROJECT_DIR }}"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
-        # run: |
-        #   trivy fs "${{ env.PROJECT_DIR }}/" --format sarif --output "${{ env.PROJECT_DIR }}/scan-results.sarif" --scanners "vuln,secret,misconfig,license"
 
-      - name: Upload SARIF results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Upload SARIF
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: "${{ env.PROJECT_DIR }}/scan-results.sarif"
-          category: "${{ env.TOOL }}"
+          name: sarif
+          path: "${{ env.PROJECT_DIR }}/scan-results.sarif"
+          retention-days: 1
+
+      # - name: Upload SARIF results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     sarif_file: "${{ env.PROJECT_DIR }}/scan-results.sarif"
+      #     category: "${{ env.TOOL }}"
 
       - name: Show directory tree
         run: |
