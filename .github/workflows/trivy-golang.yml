@@ -71,8 +71,8 @@ jobs:
         with:
           scan-type: "fs"
           format: "sarif"
-          output: "./${{ env.PROJECT_DIR }}/scan-results.sarif"
-          scan-ref: "./${{ env.PROJECT_DIR }}"
+          output: "${{ github.workspace }}/${{ env.PROJECT_DIR }}/scan-results.sarif"
+          scan-ref: "${{ github.workspace }}/${{ env.PROJECT_DIR }}"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
           severity: CRITICAL
@@ -82,7 +82,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sarif
-          path: "./${{ env.PROJECT_DIR }}/scan-results.sarif"
+          path: "${{ github.workspace }}/${{ env.PROJECT_DIR }}/scan-results.sarif"
           retention-days: 1
 
       - name: Upload SARIF results to GitHub Security tab
