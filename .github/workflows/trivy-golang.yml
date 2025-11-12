@@ -65,7 +65,9 @@ jobs:
           retention-days: 1
 
       - name: Generate SARIF
+        id: ScanResult
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           scan-type: "fs"
           format: "sarif"
@@ -73,6 +75,8 @@ jobs:
           scan-ref: "./${{ env.PROJECT_DIR }}"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
+          severity: CRITICAL
+          exit-code: 1
 
       - name: Upload SARIF
         uses: actions/upload-artifact@v4
@@ -85,9 +89,15 @@ jobs:
       #   uses: github/codeql-action/upload-sarif@v3
       #   with:
       #     sarif_file: "${{ env.PROJECT_DIR }}/scan-results.sarif"
-      #     category: "${{ env.TOOL }}"
+      #     category: "${{ env.TOOL }}-${{ env.PROJECT_DIR }}"
 
       - name: Show directory tree
         run: |
           echo "Repository structure:"
           tree -L 3
+
+      - name: Fail on high severity vulnerabilities
+        if: steps.ScanResult.outcome == 'failure'
+        run: |
+          echo "High severity vulnerabilities detected!"
+          exit 1
