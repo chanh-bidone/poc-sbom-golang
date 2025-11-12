@@ -1,3 +1,0 @@
-[submodule "golang"]
-	path = golang
-	url = https://github.com/chanh-bidone/poc-sbom.git
