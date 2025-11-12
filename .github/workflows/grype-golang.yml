@@ -1,0 +1,24 @@
+name: "Grype Scan: Golang"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  PROJECT_DIR: "./golang"
+
+jobs:
+  grype-scan:
+    name: "Grype Scan"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4

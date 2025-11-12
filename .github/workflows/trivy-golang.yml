@@ -1,0 +1,88 @@
+name: "Trivy Scan: Golang"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  TOOL: "trivy"
+  PROJECT_DIR: "golang"
+
+jobs:
+  trivy-scan:
+    name: "Trivy Scan"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@v0.2.4
+        with:
+          cache: true
+          version: v0.67.2
+
+      - name: Generate CycloneDX
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          format: cyclonedx
+          output: "./${{ env.PROJECT_DIR }}/cyclonedx.json"
+          scan-ref: "./${{ env.PROJECT_DIR }}"
+          scanners: vuln,secret,misconfig,license
+          skip-setup-trivy: true
+
+      - name: Upload CycloneDX
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx
+          path: "./${{ env.PROJECT_DIR }}/cyclonedx.json"
+          retention-days: 1
+
+      - name: Generate SPDX
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          format: spdx-json
+          output: "./${{ env.PROJECT_DIR }}/spdx.json"
+          scan-ref: "./${{ env.PROJECT_DIR }}"
+          scanners: vuln,secret,misconfig,license
+          skip-setup-trivy: true
+
+      - name: Upload SPDX
+        uses: actions/upload-artifact@v4
+        with:
+          name: spdx
+          path: "./${{ env.PROJECT_DIR }}/spdx.json"
+          retention-days: 1
+
+      - name: Generate SARIF
+        # uses: aquasecurity/trivy-action@master
+        # with:
+        #   scan-type: "fs"
+        #   format: "sarif"
+        #   output: "./${{ env.PROJECT_DIR }}/scan-results.sarif"
+        #   scan-ref: "./${{ env.PROJECT_DIR }}"
+        #   scanners: vuln,secret,misconfig,license
+        #   skip-setup-trivy: true
+        run: |
+          trivy fs "${{ env.PROJECT_DIR }}/" --format sarif --output "${{ env.PROJECT_DIR }}/scan-results.sarif" --scanners "vuln,secret,misconfig,license"
+
+      - name: Upload SARIF results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "${{ env.PROJECT_DIR }}/scan-results.sarif"
+          category: "${{ env.TOOL }}"
+
+      - name: Show directory tree
+        run: |
+          echo "Repository structure:"
+          tree -L 3
