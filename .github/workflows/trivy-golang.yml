@@ -30,41 +30,41 @@ jobs:
           cache: true
           version: v0.67.2
 
-      # - name: Generate and scan CycloneDX
-      #   uses: aquasecurity/trivy-action@master
-      #   with:
-      #     scan-type: "fs"
-      #     format: cyclonedx
-      #     output: "./${{ env.PROJECT_DIR }}/cyclonedx.json"
-      #     scan-ref: "./${{ env.PROJECT_DIR }}"
-      #     scanners: vuln,secret,misconfig,license
-      #     skip-setup-trivy: true
+      - name: "CycloneDX: Generate and scan"
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          format: cyclonedx
+          output: "${{ github.workspace }}/${{ env.PROJECT_DIR }}/cyclonedx.json"
+          scan-ref: "${{ github.workspace }}/${{ env.PROJECT_DIR }}"
+          scanners: vuln,secret,misconfig,license
+          skip-setup-trivy: true
 
-      # - name: Upload CycloneDX
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: cyclonedx
-      #     path: "./${{ env.PROJECT_DIR }}/cyclonedx.json"
-      #     retention-days: 1
+      - name: "CycloneDX: Upload"
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx
+          path: "${{ github.workspace }}/${{ env.PROJECT_DIR }}/cyclonedx.json"
+          retention-days: 1
 
-      # - name: Generate and scan SPDX
-      #   uses: aquasecurity/trivy-action@master
-      #   with:
-      #     scan-type: "fs"
-      #     format: spdx-json
-      #     output: "./${{ env.PROJECT_DIR }}/spdx.json"
-      #     scan-ref: "./${{ env.PROJECT_DIR }}"
-      #     scanners: vuln,secret,misconfig,license
-      #     skip-setup-trivy: true
+      - name: "SPDX: Generate and scan"
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          format: spdx-json
+          output: "${{ github.workspace }}/${{ env.PROJECT_DIR }}/spdx.json"
+          scan-ref: "${{ github.workspace }}/${{ env.PROJECT_DIR }}"
+          scanners: vuln,secret,misconfig,license
+          skip-setup-trivy: true
 
-      # - name: Upload SPDX
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: spdx
-      #     path: "./${{ env.PROJECT_DIR }}/spdx.json"
-      #     retention-days: 1
+      - name: "SPDX: Upload"
+        uses: actions/upload-artifact@v4
+        with:
+          name: spdx
+          path: "${{ github.workspace }}/${{ env.PROJECT_DIR }}/spdx.json"
+          retention-days: 1
 
-      - name: Generate and scan SARIF
+      - name: "SARIF: Generate and scan"
         id: ScanSarifResult
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
@@ -75,21 +75,20 @@ jobs:
           scan-ref: "${{ github.workspace }}/${{ env.PROJECT_DIR }}"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
-          severity: CRITICAL
           exit-code: 1
 
-      - name: Upload SARIF
+      - name: "SARIF: Upload"
         uses: actions/upload-artifact@v4
         with:
           name: sarif
           path: "${{ github.workspace }}/${{ env.PROJECT_DIR }}/scan-results.sarif"
           retention-days: 1
 
-      - name: Upload SARIF results to GitHub Security tab
+      - name: "SARIF: Upload to GitHub Security tab"
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "${{ github.workspace }}/${{ env.PROJECT_DIR }}/scan-results.sarif"
-          category: "${{ env.PROJECT_DIR }}"
+          category: "${{ env.TOOL }}-${{ env.PROJECT_DIR }}"
           checkout_path: "${{ github.workspace }}/${{ env.PROJECT_DIR }}"
 
       - name: Fail on high severity vulnerabilities
