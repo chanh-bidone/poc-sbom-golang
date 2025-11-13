@@ -31,7 +31,7 @@ jobs:
         with:
           scan-type: "fs"
           format: cyclonedx
-          output: "./golang/trivy-cyclonedx.json"
+          output: "./golang/${{ github.ref_name }}-trivy-cyclonedx.json"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
@@ -39,15 +39,15 @@ jobs:
       - name: "Upload CycloneDX"
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-cyclonedx
-          path: "./golang/trivy-cyclonedx.json"
+          name: "${{ github.ref_name }}-trivy-cyclonedx"
+          path: "./golang/${{ github.ref_name }}-trivy-cyclonedx.json"
 
       - name: "Generate SPDX"
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
           format: spdx-json
-          output: "./golang/trivy-spdx.json"
+          output: "./golang/${{ github.ref_name }}-trivy-spdx.json"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
@@ -55,8 +55,8 @@ jobs:
       - name: "Upload SPDX"
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-spdx
-          path: "./golang/trivy-spdx.json"
+          name: "${{ github.ref_name }}-trivy-spdx"
+          path: "./golang/${{ github.ref_name }}-trivy-spdx.json"
 
       - name: "Scan"
         id: ScanSarifResult
@@ -65,7 +65,7 @@ jobs:
         with:
           scan-type: "fs"
           format: "sarif"
-          output: "./golang/trivy.sarif"
+          output: "./golang/${{ github.ref_name }}-trivy.sarif"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           exit-code: 1
@@ -74,8 +74,7 @@ jobs:
       - name: "Upload to GitHub Security tab"
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: "./golang/trivy.sarif"
-          category: "trivy-golang"
+          sarif_file: "./golang/${{ github.ref_name }}-trivy.sarif"
           checkout_path: "./golang/"
 
       - name: Print directory
