@@ -39,7 +39,7 @@ jobs:
       - name: "Upload CycloneDX"
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-cyclonedx
+          name: "trivy-cyclonedx"
           path: "./golang/trivy-cyclonedx.json"
 
       - name: "Generate SPDX"
@@ -55,11 +55,23 @@ jobs:
       - name: "Upload SPDX"
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-spdx
+          name: "trivy-spdx"
           path: "./golang/trivy-spdx.json"
 
-      - name: "Scan"
-        id: ScanSarifResult
+      - name: "Scan on PR"
+        if: github.event_name == 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          format: "table"
+          scan-ref: "./golang/"
+          scanners: vuln,secret,misconfig,license
+          exit-code: 1
+          skip-setup-trivy: true
+
+      - name: "Scan on main"
+        if: github.event_name != 'pull_request'
+        id: scan_result
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
@@ -71,20 +83,15 @@ jobs:
           exit-code: 1
           skip-setup-trivy: true
 
-      - name: "Upload to GitHub Security tab"
+      - name: "Scan on main: Upload result to GitHub Security tab"
+        if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "./golang/trivy.sarif"
-          category: "trivy-golang"
           checkout_path: "./golang/"
 
-      - name: Print directory
-        run: |
-          echo "Print directory"
-          tree ./golang
-
-      - name: Fail on any vulnerabilities
-        if: steps.ScanSarifResult.outcome == 'failure'
+      - name: "Scan on main: Fail on any vulnerabilities"
+        if: github.event_name != 'pull_request' && steps.scan_result.outcome == 'failure'
         run: |
           echo "Vulnerabilities detected!"
           exit 1
