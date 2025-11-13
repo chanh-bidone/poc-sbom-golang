@@ -12,7 +12,8 @@ permissions:
   security-events: write
 
 env:
-  PROJECT_DIR: "./golang"
+  TOOL: "grype"
+  PROJECT_DIR: "golang"
 
 jobs:
   grype-scan:
@@ -22,3 +23,49 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: "CycloneDX: Generate"
+        uses: anchore/sbom-action@v0
+        with:
+          path: "./golang"
+          output-file: "./golang/grype-cyclonedx.json"
+          format: "cyclonedx-json"
+          artifact-name: "grype-cyclonedx.json"
+
+      - name: "SPDX: Generate"
+        uses: anchore/sbom-action@v0
+        with:
+          path: "./golang"
+          output-file: "./golang/grype-spdx.json"
+          format: "spdx-json"
+          artifact-name: "grype-spdx.json"
+
+      # - name: "SARIF: Generate"
+      #   uses: anchore/sbom-action@v0
+      #   with:
+      #     path: "./golang"
+      #     output-file: "./golang/grype.sarif"
+      #     format: "sarif"
+      #     artifact-name: "grype.sarif"
+
+      # - name: Scan
+      #   uses: anchore/scan-action@v6
+      #   with:
+      #     sbom: "./golang/grype.sarif"
+
+      - name: Scan
+        id: scan
+        uses: anchore/scan-action@v6
+        with:
+          path: "./golang/"
+          fail-build: true
+          severity-cutoff: low
+          output-format: sarif
+          output-file: "./golang/grype.sarif"
+          by-cve: true
+
+      - name: Upload to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: "./golang/grype.sarif"
+          category: "grype-golang"
