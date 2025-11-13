@@ -11,9 +11,6 @@ permissions:
   contents: read
   security-events: write
 
-env:
-  CLEAN_BRANCH_NAME: "main"
-
 jobs:
   trivy-scan:
     name: "Trivy Scan"
@@ -22,11 +19,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Clean branch name
-        run: |
-          CLEAN_BRANCH_NAME="${GITHUB_REF_NAME//\//-}"
-          echo "CLEAN_BRANCH_NAME=$CLEAN_BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Manual Trivy Setup
         uses: aquasecurity/setup-trivy@v0.2.4
@@ -39,7 +31,7 @@ jobs:
         with:
           scan-type: "fs"
           format: cyclonedx
-          output: "./golang/${{ env.CLEAN_BRANCH_NAME }}-trivy-cyclonedx.json"
+          output: "./golang/trivy-cyclonedx.json"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
@@ -47,15 +39,15 @@ jobs:
       - name: "Upload CycloneDX"
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ env.CLEAN_BRANCH_NAME }}-trivy-cyclonedx"
-          path: "./golang/${{ env.CLEAN_BRANCH_NAME }}-trivy-cyclonedx.json"
+          name: "trivy-cyclonedx"
+          path: "./golang/trivy-cyclonedx.json"
 
       - name: "Generate SPDX"
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
           format: spdx-json
-          output: "./golang/${{ env.CLEAN_BRANCH_NAME }}-trivy-spdx.json"
+          output: "./golang/trivy-spdx.json"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
@@ -63,8 +55,8 @@ jobs:
       - name: "Upload SPDX"
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ env.CLEAN_BRANCH_NAME }}-trivy-spdx"
-          path: "./golang/${{ env.CLEAN_BRANCH_NAME }}-trivy-spdx.json"
+          name: "trivy-spdx"
+          path: "./golang/trivy-spdx.json"
 
       - name: "Scan"
         id: scan_result
@@ -73,7 +65,7 @@ jobs:
         with:
           scan-type: "fs"
           format: "sarif"
-          output: "./golang/${{ env.CLEAN_BRANCH_NAME }}-trivy.sarif"
+          output: "./golang/trivy.sarif"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           exit-code: 1
@@ -82,7 +74,7 @@ jobs:
       - name: "Upload to GitHub Security tab"
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: "./golang/${{ env.CLEAN_BRANCH_NAME }}-trivy.sarif"
+          sarif_file: "./golang/trivy.sarif"
           checkout_path: "./golang/"
 
       - name: Print directory
