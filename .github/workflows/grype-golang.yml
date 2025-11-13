@@ -25,6 +25,7 @@ jobs:
 
       - name: Clean branch name
         run: |
+          echo "${GITHUB_REF_NAME}"
           CLEAN_BRANCH_NAME="${GITHUB_REF_NAME//\//-}"
           echo "CLEAN_BRANCH_NAME=$CLEAN_BRANCH_NAME" >> $GITHUB_ENV
 
