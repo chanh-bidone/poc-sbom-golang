@@ -1,4 +1,4 @@
-name: "Grype Scan: Golang"
+name: "Grype Scan"
 
 on:
   push:
@@ -23,16 +23,16 @@ jobs:
       - name: "Generate CycloneDX"
         uses: anchore/sbom-action@v0
         with:
-          path: "./golang"
-          output-file: "./golang/grype-cyclonedx.json"
+          path: "."
+          output-file: "grype-cyclonedx.json"
           format: "cyclonedx-json"
           artifact-name: "grype-cyclonedx.json"
 
       - name: "Generate SPDX"
         uses: anchore/sbom-action@v0
         with:
-          path: "./golang"
-          output-file: "./golang/grype-spdx.json"
+          path: "."
+          output-file: "grype-spdx.json"
           format: "spdx-json"
           artifact-name: "grype-spdx.json"
 
@@ -41,7 +41,7 @@ jobs:
         id: scan_result_pr
         uses: anchore/scan-action@v6
         with:
-          sbom: "./golang/grype-cyclonedx.json"
+          sbom: "grype-cyclonedx.json"
           fail-build: true
           severity-cutoff: low
           output-format: table
@@ -53,11 +53,11 @@ jobs:
         uses: anchore/scan-action@v6
         continue-on-error: true
         with:
-          sbom: "./golang/grype-cyclonedx.json"
+          sbom: "grype-cyclonedx.json"
           fail-build: true
           severity-cutoff: low
           output-format: sarif
-          output-file: "./golang/grype.sarif"
+          output-file: "grype.sarif"
           by-cve: true
 
       - name: "Scan on main: Upload result to GitHub Security tab"
@@ -65,7 +65,6 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "${{ steps.scan_result.outputs.sarif }}"
-          checkout_path: "./golang/"
 
       - name: "Scan on main: Fail on any vulnerabilities"
         if: github.event_name != 'pull_request' && steps.scan_result.outcome == 'failure'
