@@ -20,13 +20,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # - name: Manual Trivy Setup
-      #   uses: aquasecurity/setup-trivy@v0.2.4
-      #   with:
-      #     cache: true
-      #     version: v0.67.2
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@v0.2.4
+        with:
+          cache: true
+          version: v0.67.2
 
-      - name: "CycloneDX: Generate and scan"
+      - name: "Generate CycloneDX"
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
@@ -34,15 +34,15 @@ jobs:
           output: "./golang/trivy-cyclonedx.json"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
-          # skip-setup-trivy: true
+          skip-setup-trivy: true
 
-      - name: "CycloneDX: Upload"
+      - name: "Upload CycloneDX"
         uses: actions/upload-artifact@v4
         with:
-          name: cyclonedx
+          name: trivy-cyclonedx
           path: "./golang/trivy-cyclonedx.json"
 
-      - name: "SPDX: Generate and scan"
+      - name: "Generate SPDX"
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
@@ -50,39 +50,33 @@ jobs:
           output: "./golang/trivy-spdx.json"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
-          # skip-setup-trivy: true
+          skip-setup-trivy: true
 
-      - name: "SPDX: Upload"
+      - name: "Upload SPDX"
         uses: actions/upload-artifact@v4
         with:
-          name: spdx
+          name: trivy-spdx
           path: "./golang/trivy-spdx.json"
 
-      - name: "SARIF: Generate and scan"
+      - name: "Scan"
         id: ScanSarifResult
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
           scan-type: "fs"
           format: "sarif"
-          output: "./golang/trivy-scan-results.sarif"
+          output: "./golang/trivy.sarif"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           exit-code: 1
-          # skip-setup-trivy: true
+          skip-setup-trivy: true
 
-      - name: "SARIF: Upload"
-        uses: actions/upload-artifact@v4
-        with:
-          name: sarif
-          path: "./golang/trivy-scan-results.sarif"
-
-      - name: "SARIF: Upload to GitHub Security tab"
+      - name: "Upload to GitHub Security tab"
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "./golang/trivy.sarif"
           category: "trivy-golang"
-          # checkout_path: "./golang/"
+          checkout_path: "./golang/"
 
       - name: Print directory
         run: |

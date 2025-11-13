@@ -24,7 +24,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: "CycloneDX: Generate"
+      - name: "Generate CycloneDX"
         uses: anchore/sbom-action@v0
         with:
           path: "./golang"
@@ -32,7 +32,7 @@ jobs:
           format: "cyclonedx-json"
           artifact-name: "grype-cyclonedx.json"
 
-      - name: "SPDX: Generate"
+      - name: "Generate SPDX"
         uses: anchore/sbom-action@v0
         with:
           path: "./golang"
@@ -40,25 +40,11 @@ jobs:
           format: "spdx-json"
           artifact-name: "grype-spdx.json"
 
-      # - name: "SARIF: Generate"
-      #   uses: anchore/sbom-action@v0
-      #   with:
-      #     path: "./golang"
-      #     output-file: "./golang/grype.sarif"
-      #     format: "sarif"
-      #     artifact-name: "grype.sarif"
-
-      # - name: Scan
-      #   uses: anchore/scan-action@v6
-      #   with:
-      #     sbom: "./golang/grype.sarif"
-
       - name: Scan
         id: ScanSarifResult
         uses: anchore/scan-action@v6
         continue-on-error: true
         with:
-          # path: "./golang/"
           sbom: "./golang/grype-cyclonedx.json"
           fail-build: true
           severity-cutoff: low
@@ -69,9 +55,9 @@ jobs:
       - name: Upload to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         with:
-          # sarif_file: "./golang/grype.sarif"
           sarif_file: "${{ steps.ScanSarifResult.outputs.sarif }}"
           category: "grype-golang"
+          checkout_path: "./golang/"
 
       - name: Print directory
         run: |
