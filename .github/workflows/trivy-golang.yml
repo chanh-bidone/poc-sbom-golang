@@ -21,12 +21,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Clean branch name
-        uses: step-security/actions-find-and-replace-string@v1
+        uses: step-security/actions-find-and-replace-string@v5
         id: clean_branch_name
         with:
           source: "${{ github.ref_name }}"
           find: "/"
           replace: "-"
+          replaceAll: "true"
 
       - name: Manual Trivy Setup
         uses: aquasecurity/setup-trivy@v0.2.4
