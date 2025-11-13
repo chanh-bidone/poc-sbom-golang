@@ -12,8 +12,7 @@ permissions:
   security-events: write
 
 env:
-  TOOL: "grype"
-  PROJECT_DIR: "golang"
+  CLEAN_BRANCH_NAME: "main"
 
 jobs:
   grype-scan:
@@ -25,40 +24,36 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Clean branch name
-        uses: step-security/actions-find-and-replace-string@v5
-        id: clean_branch_name
-        with:
-          source: "${{ github.ref_name }}"
-          find: "/"
-          replace: "-"
-          replaceAll: "true"
+        run: |
+          CLEAN_BRANCH_NAME="${GITHUB_REF_NAME//\//-}"
+          echo "CLEAN_BRANCH_NAME=$CLEAN_BRANCH_NAME" >> $GITHUB_ENV
 
       - name: "Generate CycloneDX"
         uses: anchore/sbom-action@v0
         with:
           path: "./golang"
-          output-file: "./golang/${{ steps.clean_branch_name.outputs.result }}-grype-cyclonedx.json"
+          output-file: "./golang/${{ env.CLEAN_BRANCH_NAME }}-grype-cyclonedx.json"
           format: "cyclonedx-json"
-          artifact-name: "${{ steps.clean_branch_name.outputs.result }}-grype-cyclonedx.json"
+          artifact-name: "${{ env.CLEAN_BRANCH_NAME }}-grype-cyclonedx.json"
 
       - name: "Generate SPDX"
         uses: anchore/sbom-action@v0
         with:
           path: "./golang"
-          output-file: "./golang/${{ steps.clean_branch_name.outputs.result }}-grype-spdx.json"
+          output-file: "./golang/${{ env.CLEAN_BRANCH_NAME }}-grype-spdx.json"
           format: "spdx-json"
-          artifact-name: "${{ steps.clean_branch_name.outputs.result }}-grype-spdx.json"
+          artifact-name: "${{ env.CLEAN_BRANCH_NAME }}-grype-spdx.json"
 
       - name: Scan
         id: scan_result
         uses: anchore/scan-action@v6
         continue-on-error: true
         with:
-          sbom: "./golang/${{ steps.clean_branch_name.outputs.result }}-grype-cyclonedx.json"
+          sbom: "./golang/${{ env.CLEAN_BRANCH_NAME }}-grype-cyclonedx.json"
           fail-build: true
           severity-cutoff: low
           output-format: sarif
-          output-file: "./golang/${{ steps.clean_branch_name.outputs.result }}-grype.sarif"
+          output-file: "./golang/${{ env.CLEAN_BRANCH_NAME }}-grype.sarif"
           by-cve: true
 
       - name: Upload to GitHub Security tab
