@@ -24,38 +24,46 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Clean branch name
+        uses: step-security/actions-find-and-replace-string@v1
+        id: clean_branch_name
+        with:
+          source: "${{ github.ref_name }}"
+          find: "/"
+          replace: "-"
+
       - name: "Generate CycloneDX"
         uses: anchore/sbom-action@v0
         with:
           path: "./golang"
-          output-file: "./golang/${{ github.ref_name }}-grype-cyclonedx.json"
+          output-file: "./golang/${{ steps.clean_branch_name.outputs.result }}-grype-cyclonedx.json"
           format: "cyclonedx-json"
-          artifact-name: "${{ github.ref_name }}-grype-cyclonedx.json"
+          artifact-name: "${{ steps.clean_branch_name.outputs.result }}-grype-cyclonedx.json"
 
       - name: "Generate SPDX"
         uses: anchore/sbom-action@v0
         with:
           path: "./golang"
-          output-file: "./golang/${{ github.ref_name }}-grype-spdx.json"
+          output-file: "./golang/${{ steps.clean_branch_name.outputs.result }}-grype-spdx.json"
           format: "spdx-json"
-          artifact-name: "${{ github.ref_name }}-grype-spdx.json"
+          artifact-name: "${{ steps.clean_branch_name.outputs.result }}-grype-spdx.json"
 
       - name: Scan
-        id: ScanSarifResult
+        id: scan_result
         uses: anchore/scan-action@v6
         continue-on-error: true
         with:
-          sbom: "./golang/${{ github.ref_name }}-grype-cyclonedx.json"
+          sbom: "./golang/${{ steps.clean_branch_name.outputs.result }}-grype-cyclonedx.json"
           fail-build: true
           severity-cutoff: low
           output-format: sarif
-          output-file: "./golang/${{ github.ref_name }}-grype.sarif"
+          output-file: "./golang/${{ steps.clean_branch_name.outputs.result }}-grype.sarif"
           by-cve: true
 
       - name: Upload to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: "${{ steps.ScanSarifResult.outputs.sarif }}"
+          sarif_file: "${{ steps.scan_result.outputs.sarif }}"
           checkout_path: "./golang/"
 
       - name: Print directory
@@ -64,7 +72,7 @@ jobs:
           tree ./golang
 
       - name: Fail on any vulnerabilities
-        if: steps.ScanSarifResult.outcome == 'failure'
+        if: steps.scan_result.outcome == 'failure'
         run: |
           echo "Vulnerabilities detected!"
           exit 1

@@ -20,6 +20,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Clean branch name
+        uses: step-security/actions-find-and-replace-string@v1
+        id: clean_branch_name
+        with:
+          source: "${{ github.ref_name }}"
+          find: "/"
+          replace: "-"
+
       - name: Manual Trivy Setup
         uses: aquasecurity/setup-trivy@v0.2.4
         with:
@@ -31,7 +39,7 @@ jobs:
         with:
           scan-type: "fs"
           format: cyclonedx
-          output: "./golang/${{ github.ref_name }}-trivy-cyclonedx.json"
+          output: "./golang/${{ steps.clean_branch_name.outputs.result }}-trivy-cyclonedx.json"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
@@ -39,15 +47,15 @@ jobs:
       - name: "Upload CycloneDX"
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ github.ref_name }}-trivy-cyclonedx"
-          path: "./golang/${{ github.ref_name }}-trivy-cyclonedx.json"
+          name: "${{ steps.clean_branch_name.outputs.result }}-trivy-cyclonedx"
+          path: "./golang/${{ steps.clean_branch_name.outputs.result }}-trivy-cyclonedx.json"
 
       - name: "Generate SPDX"
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
           format: spdx-json
-          output: "./golang/${{ github.ref_name }}-trivy-spdx.json"
+          output: "./golang/${{ steps.clean_branch_name.outputs.result }}-trivy-spdx.json"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           skip-setup-trivy: true
@@ -55,17 +63,17 @@ jobs:
       - name: "Upload SPDX"
         uses: actions/upload-artifact@v4
         with:
-          name: "${{ github.ref_name }}-trivy-spdx"
-          path: "./golang/${{ github.ref_name }}-trivy-spdx.json"
+          name: "${{ steps.clean_branch_name.outputs.result }}-trivy-spdx"
+          path: "./golang/${{ steps.clean_branch_name.outputs.result }}-trivy-spdx.json"
 
       - name: "Scan"
-        id: ScanSarifResult
+        id: scan_result
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
           scan-type: "fs"
           format: "sarif"
-          output: "./golang/${{ github.ref_name }}-trivy.sarif"
+          output: "./golang/${{ steps.clean_branch_name.outputs.result }}-trivy.sarif"
           scan-ref: "./golang/"
           scanners: vuln,secret,misconfig,license
           exit-code: 1
@@ -74,7 +82,7 @@ jobs:
       - name: "Upload to GitHub Security tab"
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: "./golang/${{ github.ref_name }}-trivy.sarif"
+          sarif_file: "./golang/${{ steps.clean_branch_name.outputs.result }}-trivy.sarif"
           checkout_path: "./golang/"
 
       - name: Print directory
@@ -83,7 +91,7 @@ jobs:
           tree ./golang
 
       - name: Fail on any vulnerabilities
-        if: steps.ScanSarifResult.outcome == 'failure'
+        if: steps.scan_result.outcome == 'failure'
         run: |
           echo "Vulnerabilities detected!"
           exit 1
