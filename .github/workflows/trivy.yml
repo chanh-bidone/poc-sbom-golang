@@ -33,8 +33,9 @@ jobs:
           format: cyclonedx
           output: "trivy-cyclonedx.json"
           scan-ref: "."
-          scanners: vuln,secret,misconfig,license
+          scanners: "vuln,secret,misconfig,license"
           skip-setup-trivy: true
+          version: v0.67.2
 
       - name: "Upload CycloneDX"
         uses: actions/upload-artifact@v4
@@ -49,8 +50,9 @@ jobs:
           format: spdx-json
           output: "trivy-spdx.json"
           scan-ref: "."
-          scanners: vuln,secret,misconfig,license
+          scanners: "vuln,secret,misconfig,license"
           skip-setup-trivy: true
+          version: v0.67.2
 
       - name: "Upload SPDX"
         uses: actions/upload-artifact@v4
@@ -58,19 +60,18 @@ jobs:
           name: "trivy-spdx"
           path: "trivy-spdx.json"
 
-      - name: "Scan on PR"
-        if: github.event_name == 'pull_request'
+      - name: "Scan (print to console)"
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
           format: "table"
           scan-ref: "."
-          scanners: vuln,secret,misconfig,license
-          exit-code: 1
+          # scanners: "vuln,secret,misconfig,license"
+          scanners: "license"
           skip-setup-trivy: true
+          version: v0.67.2
 
-      - name: "Scan on main"
-        if: github.event_name != 'pull_request'
+      - name: "Scan"
         id: scan_result
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
@@ -79,18 +80,18 @@ jobs:
           format: "sarif"
           output: "trivy.sarif"
           scan-ref: "."
-          scanners: vuln,secret,misconfig,license
+          scanners: "vuln,secret,misconfig,license"
           exit-code: 1
           skip-setup-trivy: true
+          version: v0.67.2
 
-      - name: "Scan on main: Upload result to GitHub Security tab"
-        if: github.event_name != 'pull_request'
+      - name: "Upload result to GitHub Security tab"
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy.sarif"
 
-      - name: "Scan on main: Fail on any vulnerabilities"
-        if: github.event_name != 'pull_request' && steps.scan_result.outcome == 'failure'
+      - name: "Fail on any vulnerabilities"
+        if: steps.scan_result.outcome == 'failure'
         run: |
           echo "Vulnerabilities detected!"
           exit 1
